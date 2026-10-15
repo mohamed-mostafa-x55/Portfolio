@@ -129,8 +129,25 @@ footer{text-align:center;padding:32px 20px;color:var(--muted);border-top:1px sol
   h2{font-size:1.6rem;margin:0 0 20px}
   .cta{margin-top:20px}
   .cta .btn{max-width:320px;margin:auto}
+  .modal{padding:12px}
+  .modal-close{top:8px;inset-inline-end:8px;background:rgba(0,0,0,0.75);z-index:10;width:34px;height:34px;font-size:22px;border:1px solid rgba(255,255,255,0.2)}
+  .modal-box.tall{max-width:320px}
+  .modal-box.tall .modal-video{max-height:78vh}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Video Lightbox Modal */
+.modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .25s ease}
+.modal.open{display:flex;opacity:1}
+.modal-backdrop{position:absolute;inset:0;cursor:pointer}
+.modal-box{position:relative;z-index:2;width:100%;max-width:920px;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.7);animation:popIn .25s ease-out}
+.modal-box.tall{max-width:400px}
+@keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-close{position:absolute;top:-46px;inset-inline-end:0;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,0.2);color:#fff;font-size:26px;line-height:1;display:grid;place-items:center;cursor:pointer;transition:background .2s,transform .15s}
+.modal-close:hover{background:rgba(255,255,255,0.35);transform:scale(1.08)}
+.modal-video{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+.modal-box.tall .modal-video{aspect-ratio:9/16;max-height:80vh}
+.modal-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 </style>
 </head>
 <body>
@@ -169,6 +186,13 @@ footer{text-align:center;padding:32px 20px;color:var(--muted);border-top:1px sol
   <div class="rev" id="reviews"></div>
 </section>
 <footer data-k="foot"></footer>
+<div id="modal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <button class="modal-close" aria-label="Close" type="button">&times;</button>
+    <div class="modal-video" id="modal-video"></div>
+  </div>
+</div>
 <script>
 /* ===== عدّل هنا ===== */
 const WHATSAPP = "201101113213";
@@ -335,7 +359,12 @@ function render(){
       a.className="card"; a.href=w.url; a.target="_blank"; a.rel="noopener";
       const id=getYouTubeId(w.url);
       a.innerHTML='<img alt="" loading="lazy" src="https://img.youtube.com/vi/'+id+'/maxresdefault.jpg" onerror="if(this.src.indexOf(\'maxresdefault\')!==-1){this.src=\'https://img.youtube.com/vi/'+id+'/sddefault.jpg\'}else if(this.src.indexOf(\'sddefault\')!==-1){this.src=\'https://img.youtube.com/vi/'+id+'/hqdefault.jpg\'}else{this.remove()}"><span class="t" dir="auto"></span><span class="play"></span>';
-      a.querySelector(".t").textContent=w[lang]; g.appendChild(a);
+      a.querySelector(".t").textContent=w[lang];
+      a.onclick = e => {
+        e.preventDefault();
+        openVideo(id, w.o === "tall");
+      };
+      g.appendChild(a);
     });
   }
 
@@ -351,6 +380,29 @@ function render(){
   }
 }
 render();
+
+const modal = $("#modal");
+const modalBox = modal.querySelector(".modal-box");
+const modalVideo = $("#modal-video");
+
+function openVideo(id, isTall){
+  modalBox.className = "modal-box" + (isTall ? " tall" : "");
+  modalVideo.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeVideo(){
+  modal.classList.remove("open");
+  modal.setAttribute("aria-hidden", "true");
+  modalVideo.innerHTML = "";
+  document.body.style.overflow = "";
+}
+
+modal.querySelector(".modal-backdrop").onclick = closeVideo;
+modal.querySelector(".modal-close").onclick = closeVideo;
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeVideo(); });
 </script>
 </body>
 </html>
